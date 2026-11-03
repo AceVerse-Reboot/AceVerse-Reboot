@@ -1,5 +1,5 @@
 # Copy into your profile repository as .github/workflows/koi.yml, then embed
-# <img src="koi/pond.gif" width="800" alt="Ace's animated koi pond"> in README.md.
+# <img src="koi/neural-pond.gif" width="800" alt="Ace's animated koi pond"> in README.md.
 name: Koi
 
 on:
@@ -79,9 +79,10 @@ jobs:
           d.text((400,62),"ACE'S KOI POND",fill='#b6ded7',font=title,anchor='mm',stroke_width=0)
           d.text((400,84),'ORGANIC INSTINCT. MACHINE INTELLIGENCE.',fill='#75b9ba',font=small,anchor='mm')
           # A small neural-network motif in the left shallows.
-          layers = [[(103,y) for y in (176,198,220)],
-                    [(134,y) for y in (165,187,209,231)],
-                    [(165,y) for y in (176,198,220)]]
+          layers = [[(91,y) for y in (176,198,220)],
+                    [(117,y) for y in (165,187,209,231)],
+                    [(143,y) for y in (165,187,209,231)],
+                    [(169,y) for y in (187,209)]]
           for left,right in zip(layers,layers[1:]):
               for a in left:
                   for b in right:
@@ -89,7 +90,7 @@ jobs:
           for layer in layers:
               for x,y in layer:
                   d.ellipse((x-3,y-3,x+3,y+3),fill='#77d1d0',outline='#258b9c')
-          d.text((134,246),'NEURAL NETWORK',fill='#73b5bb',font=small,anchor='mm')
+          d.text((134,246),'DEEP LEARNING',fill='#73b5bb',font=small,anchor='mm')
           # Microchip motif in the opposite shallows.
           d.rounded_rectangle((648,117,694,159),radius=5,fill='#123b50',outline='#55bfc9',width=2)
           for off in range(7,40,8):
@@ -98,8 +99,24 @@ jobs:
               d.line((642,117+off,648,117+off),fill='#55bfc9',width=2)
               d.line((694,117+off,700,117+off),fill='#55bfc9',width=2)
           d.text((671,138),'ML',fill='#b5f7ec',font=title,anchor='mm')
-          d.text((671,183),'LEARNING CORE',fill='#73b5bb',font=small,anchor='mm')
-          for x1,x2,label in [(234,278,'AI'),(290,430,'MACHINE LEARNING'),(442,566,'CYBERSECURITY')]:
+          d.text((671,183),'MACHINE LEARNING',fill='#73b5bb',font=small,anchor='mm')
+          # A shield and padlock represent cyber defence in the centre of the pond.
+          shield = [(400,148),(424,157),(421,185),(413,198),(400,207),(387,198),(379,185),(376,157),(400,148)]
+          d.polygon(shield,fill='#123b4c')
+          d.line(shield,fill='#66c5cc',width=2)
+          d.arc((392,164,408,181),180,360,fill='#a0ded7',width=2)
+          d.rounded_rectangle((390,173,410,188),radius=3,fill='#a0ded7')
+          d.ellipse((398,177,402,181),fill='#153b4e')
+          d.line((400,180,400,184),fill='#153b4e',width=2)
+          d.text((400,221),'CYBER DEFENCE',fill='#8bcac9',font=small,anchor='mm')
+          # Circuit traces and data strings are decorative, not live security metrics.
+          for points in [[(260,176),(295,176),(310,161),(353,161)],[(447,190),(485,190),(503,172),(535,172)],[(280,203),(310,203),(323,190),(353,190)]]:
+              d.line(points,fill='#287280',width=1)
+              for xx,yy in (points[0],points[-1]):
+                  d.ellipse((xx-2,yy-2,xx+2,yy+2),outline='#5caaaf')
+          d.text((225,270),'01001001',fill='#327f88',font=small,anchor='mm')
+          d.text((576,102),'10100110',fill='#327f88',font=small,anchor='mm')
+          for x1,x2,label in [(170,213,'AI'),(222,357,'MACHINE LEARNING'),(366,480,'DEEP LEARNING'),(489,630,'CYBERSECURITY')]:
               d.rounded_rectangle((x1,286,x2,308),radius=8,fill='#103c4b',outline='#397b85')
               d.text(((x1+x2)/2,297),label,fill='#a2d8d3',font=small,anchor='mm')
           
@@ -153,6 +170,19 @@ jobs:
               phase=2*math.pi*i/len(fish)
               frame=base.copy().convert('RGBA')
               draw=ImageDraw.Draw(frame)
+              # Signals move through the layers, suggesting a forward pass.
+              activation = (i / len(fish) * 4) % 1
+              active_layer = min(3,int(activation*4))
+              for xx,yy in layers[active_layer]:
+                  draw.ellipse((xx-3,yy-3,xx+3,yy+3),fill='#b8fff0',outline='#61d6d4')
+              for offset,points in enumerate([[(260,176),(295,176),(310,161),(353,161)],[(447,190),(485,190),(503,172),(535,172)]]):
+                  t=(i/len(fish)*3+offset*.5)%1
+                  section=min(2,int(t*3))
+                  frac=t*3-section
+                  a,b=points[section],points[section+1]
+                  xx=a[0]+(b[0]-a[0])*frac
+                  yy=a[1]+(b[1]-a[1])*frac
+                  draw.ellipse((xx-2,yy-2,xx+2,yy+2),fill='#8ce6e4')
               for x,y in [(225,113),(564,193),(252,251),(588,105)]:
                   r=10+5*math.sin(phase+x)
                   draw.arc((x-r*2,y-r*.5,x+r*2,y+r*.5),5,150,fill='#3d858b',width=1)
@@ -171,13 +201,14 @@ jobs:
               frame.alpha_composite(cut,(x,y))
               frames.append(frame.convert('RGB').quantize(colors=128))
           Path('koi').mkdir(exist_ok=True)
-          frames[0].save('koi/pond.gif',save_all=True,append_images=frames[1:],duration=durations,loop=0,disposal=2,optimize=False)
-          print('Created koi/pond.gif')
+          frames[0].save('koi/neural-pond.tmp.gif',save_all=True,append_images=frames[1:],duration=durations,loop=0,disposal=2,optimize=False)
+          Path('koi/neural-pond.tmp.gif').replace('koi/neural-pond.gif')
+          print('Created koi/neural-pond.gif')
           PY
       - name: Commit the koi if it changed
         shell: bash
         run: |
-          git add koi/koi.gif koi/pond.gif
+          git add koi/koi.gif koi/neural-pond.gif
           if git diff --cached --quiet; then
             echo "The koi is unchanged; nothing to commit."
             exit 0

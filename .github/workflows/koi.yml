@@ -1,5 +1,5 @@
 # Copy into your profile repository as .github/workflows/koi.yml, then embed
-# <img src="koi/neural-pond.gif" width="800" alt="Ace's animated koi pond"> in README.md.
+# <img src="koi/ai-pond.gif" width="800" alt="Ace's animated koi pond"> in README.md.
 name: Koi
 
 on:
@@ -78,6 +78,25 @@ jobs:
               title=small=ImageFont.load_default()
           d.text((400,62),"ACE'S KOI POND",fill='#b6ded7',font=title,anchor='mm',stroke_width=0)
           d.text((400,84),'ORGANIC INSTINCT. MACHINE INTELLIGENCE.',fill='#75b9ba',font=small,anchor='mm')
+          # An original, generic AI emblem: a brain connected to a processor.
+          brain = [(228,77),(220,74),(212,78),(211,83),(205,85),(203,92),
+                   (207,98),(205,104),(210,111),(217,112),(221,117),(228,114),(228,77)]
+          d.polygon(brain,fill='#123b50')
+          d.line(brain,fill='#8cded8',width=2)
+          d.line([(217,80),(219,87),(214,92),(219,99),(214,105),(219,111)],fill='#5bbec6',width=2)
+          d.line([(207,92),(214,92)],fill='#5bbec6',width=2)
+          d.line([(219,99),(227,99)],fill='#5bbec6',width=2)
+          d.rounded_rectangle((232,79,257,111),radius=3,fill='#123b50',outline='#66d5db',width=2)
+          d.text((245,95),'AI',fill='#c6fff2',font=small,anchor='mm')
+          for yy in (84,94,104):
+              d.line((228,yy,232,yy),fill='#8cded8',width=1)
+              d.line((257,yy,263,yy),fill='#66d5db',width=2)
+              d.ellipse((262,yy-1,264,yy+1),fill='#8cded8')
+          for xx in (237,245,253):
+              d.line((xx,74,xx,79),fill='#66d5db',width=2)
+              d.line((xx,111,xx,116),fill='#66d5db',width=2)
+          d.text((235,130),'ARTIFICIAL',fill='#8bcac9',font=small,anchor='mm')
+          d.text((235,143),'INTELLIGENCE',fill='#8bcac9',font=small,anchor='mm')
           # A small neural-network motif in the left shallows.
           layers = [[(91,y) for y in (176,198,220)],
                     [(117,y) for y in (165,187,209,231)],
@@ -183,7 +202,7 @@ jobs:
                   xx=a[0]+(b[0]-a[0])*frac
                   yy=a[1]+(b[1]-a[1])*frac
                   draw.ellipse((xx-2,yy-2,xx+2,yy+2),fill='#8ce6e4')
-              for x,y in [(225,113),(564,193),(252,251),(588,105)]:
+              for x,y in [(304,110),(564,193),(252,251),(588,105)]:
                   r=10+5*math.sin(phase+x)
                   draw.arc((x-r*2,y-r*.5,x+r*2,y+r*.5),5,150,fill='#3d858b',width=1)
                   draw.arc((x-r*2-6,y-r*.5-3,x+r*2+6,y+r*.5+3),190,310,fill='#246c77',width=1)
@@ -201,14 +220,14 @@ jobs:
               frame.alpha_composite(cut,(x,y))
               frames.append(frame.convert('RGB').quantize(colors=128))
           Path('koi').mkdir(exist_ok=True)
-          frames[0].save('koi/neural-pond.tmp.gif',save_all=True,append_images=frames[1:],duration=durations,loop=0,disposal=2,optimize=False)
-          Path('koi/neural-pond.tmp.gif').replace('koi/neural-pond.gif')
-          print('Created koi/neural-pond.gif')
+          frames[0].save('koi/ai-pond.tmp.gif',save_all=True,append_images=frames[1:],duration=durations,loop=0,disposal=2,optimize=False)
+          Path('koi/ai-pond.tmp.gif').replace('koi/ai-pond.gif')
+          print('Created koi/ai-pond.gif')
           PY
       - name: Commit the koi if it changed
         shell: bash
         run: |
-          git add koi/koi.gif koi/neural-pond.gif
+          git add koi/koi.gif koi/ai-pond.gif
           if git diff --cached --quiet; then
             echo "The koi is unchanged; nothing to commit."
             exit 0
@@ -216,4 +235,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit --quiet --message "koi: draw the day's koi"
-          git push --quiet
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push --quiet origin "HEAD:$GITHUB_REF_NAME"

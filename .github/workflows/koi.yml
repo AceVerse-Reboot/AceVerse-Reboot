@@ -1,5 +1,5 @@
 # Copy into your profile repository as .github/workflows/koi.yml, then embed
-# <img src="koi/ai-pond.gif" width="800" alt="Ace's animated koi pond"> in README.md.
+# <img src="koi/ai-pond-waves.gif" width="800" alt="Ace's animated koi pond"> in README.md.
 name: Koi
 
 on:
@@ -134,7 +134,6 @@ jobs:
               for xx,yy in (points[0],points[-1]):
                   d.ellipse((xx-2,yy-2,xx+2,yy+2),outline='#5caaaf')
           d.text((225,270),'01001001',fill='#327f88',font=small,anchor='mm')
-          d.text((576,102),'10100110',fill='#327f88',font=small,anchor='mm')
           for x1,x2,label in [(170,213,'AI'),(222,357,'MACHINE LEARNING'),(366,480,'DEEP LEARNING'),(489,630,'CYBERSECURITY')]:
               d.rounded_rectangle((x1,286,x2,308),radius=8,fill='#103c4b',outline='#397b85')
               d.text(((x1+x2)/2,297),label,fill='#a2d8d3',font=small,anchor='mm')
@@ -189,6 +188,14 @@ jobs:
               phase=2*math.pi*i/len(fish)
               frame=base.copy().convert('RGBA')
               draw=ImageDraw.Draw(frame)
+              # Quiet wavelets follow the inner shore, clear of the labels and icons.
+              for yy,start,end,offset in [(45,280,358,0),(45,490,570,1.7),(318,220,320,1),(318,460,555,2.2)]:
+                  points=[(xx,yy+2*math.sin((xx-start)*math.pi/38+phase+offset)) for xx in range(start,end+1)]
+                  draw.line(points,fill='#28616c',width=1)
+                  draw.line([(xx,yy+5+1.5*math.sin((xx-start)*math.pi/38+phase+offset)) for xx in range(start+10,end-10)],fill='#205761',width=1)
+              for xx,start,end,offset in [(47,150,254,0),(752,99,195,2)]:
+                  points=[(xx+2*math.sin((yy-start)*math.pi/40+phase+offset),yy) for yy in range(start,end+1)]
+                  draw.line(points,fill='#28616c',width=1)
               # Signals move through the layers, suggesting a forward pass.
               activation = (i / len(fish) * 4) % 1
               active_layer = min(3,int(activation*4))
@@ -220,14 +227,14 @@ jobs:
               frame.alpha_composite(cut,(x,y))
               frames.append(frame.convert('RGB').quantize(colors=128))
           Path('koi').mkdir(exist_ok=True)
-          frames[0].save('koi/ai-pond.tmp.gif',save_all=True,append_images=frames[1:],duration=durations,loop=0,disposal=2,optimize=False)
-          Path('koi/ai-pond.tmp.gif').replace('koi/ai-pond.gif')
-          print('Created koi/ai-pond.gif')
+          frames[0].save('koi/ai-pond-waves.tmp.gif',save_all=True,append_images=frames[1:],duration=durations,loop=0,disposal=2,optimize=False)
+          Path('koi/ai-pond-waves.tmp.gif').replace('koi/ai-pond-waves.gif')
+          print('Created koi/ai-pond-waves.gif')
           PY
       - name: Commit the koi if it changed
         shell: bash
         run: |
-          git add koi/koi.gif koi/ai-pond.gif
+          git add koi/koi.gif koi/ai-pond-waves.gif
           if git diff --cached --quiet; then
             echo "The koi is unchanged; nothing to commit."
             exit 0

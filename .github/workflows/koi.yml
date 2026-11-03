@@ -1,7 +1,10 @@
+# Copy into your profile repository as .github/workflows/koi.yml, then embed
+# <img src="koi/koi.gif" width="256" alt="My koi"> in its README.md.
 name: Koi
 
 on:
   schedule:
+    # Just after midnight UTC, so the koi shows the day that just ended.
     - cron: "20 0 * * *"
   workflow_dispatch:
   push:
@@ -17,16 +20,92 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
       - uses: yalongwastaken/git-koi@v1
         with:
           body: white
           output-dir: koi
-
+      - name: Create the pond
+        run: |
+          python -m pip install Pillow==12.3.0
+          python - <<'PY'
+          from PIL import Image, ImageDraw, ImageSequence, ImageFont
+          import math, random
+          from pathlib import Path
+          
+          src = Image.open('koi/koi.gif')
+          fish = [f.convert('RGBA').copy() for f in ImageSequence.Iterator(src)]
+          durations = []
+          for i in range(src.n_frames):
+              src.seek(i)
+              durations.append(src.info.get('duration', 70))
+          boxes = [f.getbbox() for f in fish if f.getbbox()]
+          box = (min(b[0] for b in boxes), min(b[1] for b in boxes),
+                 max(b[2] for b in boxes), max(b[3] for b in boxes))
+          W, H = 800, 360
+          base = Image.new('RGB', (W,H), '#101f29')
+          d = ImageDraw.Draw(base)
+          d.rounded_rectangle((10,10,790,350),radius=70,fill='#34464b')
+          d.rounded_rectangle((21,21,779,339),radius=61,fill='#62736c')
+          d.rounded_rectangle((31,31,769,329),radius=53,fill='#0a424e')
+          for j in range(16):
+              c = (9+j//2, 65+j, 77+j)
+              d.rounded_rectangle((38+j*3,38+j*3,762-j*3,322-j*3), radius=48,fill=c)
+          rng = random.Random(7)
+          for x in range(65,750,48):
+              for y in (18,342):
+                  r = rng.randint(10,17)
+                  d.ellipse((x-r,y-7,x+r,y+7),fill=rng.choice(['#455b5a','#738379','#526764']))
+          for x in (20,780):
+              for y in (95,145,195,245,295):
+                  d.ellipse((x-9,y-14,x+9,y+14),fill='#526764')
+          # Stones and plants belong to the scene; only the central koi represents activity.
+          for x,y,r in [(113,104,30),(157,127,21),(668,248,33),(714,226,22),(624,269,21)]:
+              d.ellipse((x-r+3,y-r+7,x+r+3,y+r+7),fill='#0a4650')
+              d.pieslice((x-r,y-r,x+r,y+r),20,350,fill='#3c9677',outline='#75b88c',width=2)
+              d.line((x,y,x+r*.65,y-r*.3),fill='#75b88c',width=2)
+          for x,y in [(113,101),(669,246)]:
+              for k in range(8):
+                  a=k*math.pi/4
+                  px,py=x+math.cos(a)*10,y+math.sin(a)*8
+                  d.ellipse((px-6,py-9,px+6,py+9),fill='#d482b0')
+              d.ellipse((x-7,y-6,x+7,y+6),fill='#f6bbd2')
+              d.ellipse((x-3,y-3,x+3,y+3),fill='#efd38c')
+          font_path='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+          try:
+              title=ImageFont.truetype(font_path,17)
+              small=ImageFont.truetype(font_path,10)
+          except OSError:
+              title=small=ImageFont.load_default()
+          d.text((400,62),"ACE'S KOI POND",fill='#b6ded7',font=title,anchor='mm',stroke_width=0)
+          d.text((400,298),'A little life, shaped by my code.',fill='#8fbdb8',font=small,anchor='mm')
+          frames=[]
+          for i,f in enumerate(fish):
+              phase=2*math.pi*i/len(fish)
+              frame=base.copy().convert('RGBA')
+              draw=ImageDraw.Draw(frame)
+              for x,y in [(225,113),(564,193),(252,251),(588,105)]:
+                  r=10+5*math.sin(phase+x)
+                  draw.arc((x-r*2,y-r*.5,x+r*2,y+r*.5),5,150,fill='#3d858b',width=1)
+                  draw.arc((x-r*2-6,y-r*.5-3,x+r*2+6,y+r*.5+3),190,310,fill='#246c77',width=1)
+              cut=f.crop(box)
+              scale=170/cut.width
+              cut=cut.resize((170,round(cut.height*scale)),Image.Resampling.NEAREST)
+              cut=cut.rotate(5*math.sin(phase),resample=Image.Resampling.NEAREST,expand=True)
+              x=round(400+65*math.sin(phase)-cut.width/2)
+              y=round(184+14*math.sin(phase*2)-cut.height/2)
+              shadow=Image.new('RGBA',cut.size,(0,0,0,0))
+              shadow.putalpha(cut.getchannel('A').point(lambda p: int(p*.16)))
+              frame.alpha_composite(shadow,(x+5,y+10))
+              frame.alpha_composite(cut,(x,y))
+              frames.append(frame.convert('RGB').quantize(colors=128))
+          Path('koi').mkdir(exist_ok=True)
+          frames[0].save('koi/pond.gif',save_all=True,append_images=frames[1:],duration=durations,loop=0,disposal=2,optimize=False)
+          print('Created koi/pond.gif')
+          PY
       - name: Commit the koi if it changed
         shell: bash
         run: |
-          git add koi/koi.gif
+          git add koi/koi.gif koi/pond.gif
           if git diff --cached --quiet; then
             echo "The koi is unchanged; nothing to commit."
             exit 0

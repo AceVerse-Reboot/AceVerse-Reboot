@@ -1,5 +1,5 @@
 # Copy into your profile repository as .github/workflows/koi.yml, then embed
-# <img src="koi/koi.gif" width="256" alt="My koi"> in its README.md.
+# <img src="koi/pond.gif" width="800" alt="Ace's animated koi pond"> in README.md.
 name: Koi
 
 on:
@@ -28,7 +28,7 @@ jobs:
         run: |
           python -m pip install Pillow==12.3.0
           python - <<'PY'
-          from PIL import Image, ImageDraw, ImageSequence, ImageFont
+          from PIL import Image, ImageDraw, ImageSequence, ImageFont, ImageChops
           import math, random
           from pathlib import Path
           
@@ -77,8 +77,78 @@ jobs:
           except OSError:
               title=small=ImageFont.load_default()
           d.text((400,62),"ACE'S KOI POND",fill='#b6ded7',font=title,anchor='mm',stroke_width=0)
-          d.text((400,298),'A little life, shaped by my code.',fill='#8fbdb8',font=small,anchor='mm')
+          d.text((400,84),'ORGANIC INSTINCT. MACHINE INTELLIGENCE.',fill='#75b9ba',font=small,anchor='mm')
+          # A small neural-network motif in the left shallows.
+          layers = [[(103,y) for y in (176,198,220)],
+                    [(134,y) for y in (165,187,209,231)],
+                    [(165,y) for y in (176,198,220)]]
+          for left,right in zip(layers,layers[1:]):
+              for a in left:
+                  for b in right:
+                      d.line([a,b],fill='#226b77',width=1)
+          for layer in layers:
+              for x,y in layer:
+                  d.ellipse((x-3,y-3,x+3,y+3),fill='#77d1d0',outline='#258b9c')
+          d.text((134,246),'NEURAL NETWORK',fill='#73b5bb',font=small,anchor='mm')
+          # Microchip motif in the opposite shallows.
+          d.rounded_rectangle((648,117,694,159),radius=5,fill='#123b50',outline='#55bfc9',width=2)
+          for off in range(7,40,8):
+              d.line((648+off,111,648+off,117),fill='#55bfc9',width=2)
+              d.line((648+off,159,648+off,165),fill='#55bfc9',width=2)
+              d.line((642,117+off,648,117+off),fill='#55bfc9',width=2)
+              d.line((694,117+off,700,117+off),fill='#55bfc9',width=2)
+          d.text((671,138),'ML',fill='#b5f7ec',font=title,anchor='mm')
+          d.text((671,183),'LEARNING CORE',fill='#73b5bb',font=small,anchor='mm')
+          for x1,x2,label in [(234,278,'AI'),(290,430,'MACHINE LEARNING'),(442,566,'CYBERSECURITY')]:
+              d.rounded_rectangle((x1,286,x2,308),radius=8,fill='#103c4b',outline='#397b85')
+              d.text(((x1+x2)/2,297),label,fill='#a2d8d3',font=small,anchor='mm')
+          
+          def cyborg(sprite, phase):
+              # Preserve the live koi silhouette and organic tail; armour the head half.
+              w,h = sprite.size
+              split = int(w*.53)
+              alpha = sprite.getchannel('A')
+              robot_mask = Image.new('L',(w,h),0)
+              ImageDraw.Draw(robot_mask).rectangle((split,0,w,h),fill=255)
+              robot_mask = ImageChops.multiply(alpha,robot_mask)
+              metal = sprite.copy()
+              pixels = metal.load()
+              for yy in range(h):
+                  for xx in range(split,w):
+                      red,green,blue,a = pixels[xx,yy]
+                      if not a:
+                          continue
+                      if max(red,green,blue) < 85:
+                          color = (19,37,58,a)
+                      else:
+                          band = (xx-split)//12 % 2
+                          shade = int(24*math.cos(yy/max(h,1)*math.pi))
+                          color = (max(0,107+shade+band*28), max(0,141+shade+band*25), max(0,169+shade+band*22),a)
+                      pixels[xx,yy] = color
+              # Position circuit traces and an optical sensor inside this frame's head.
+              probe = int(w*.78)
+              rows = [yy for yy in range(h) if alpha.getpixel((probe,yy))]
+              mid = round(sum(rows)/len(rows)) if rows else h//2
+              trace = Image.new('RGBA',(w,h),(0,0,0,0))
+              td = ImageDraw.Draw(trace)
+              for xx in range(split+7,w-8,14):
+                  td.line((xx,0,xx,h), fill='#34536b',width=2)
+              td.line([(split,mid),(split+19,mid),(split+25,mid-5),(w-18,mid-5)],fill='#62f4ed',width=2)
+              td.line([(split+26,mid),(split+35,mid+6),(w-28,mid+6)],fill='#39accc',width=2)
+              td.line((split,0,split,h),fill='#bafbf2',width=2)
+              eye_x=int(w*.9)
+              eye_rows=[yy for yy in range(h) if alpha.getpixel((eye_x,yy))]
+              eye_y=round(sum(eye_rows)/len(eye_rows)) if eye_rows else mid
+              td.rectangle((eye_x-4,eye_y-4,eye_x+4,eye_y+3),fill='#102439')
+              glow=round(195+50*(.5+.5*math.sin(phase*2)))
+              td.rectangle((eye_x-2,eye_y-2,eye_x+2,eye_y+1),fill=(90,glow,245,255))
+              td.point((eye_x,eye_y-1),fill='#ecffff')
+              trace.putalpha(ImageChops.multiply(trace.getchannel('A'),robot_mask))
+              metal.alpha_composite(trace)
+              return metal
           frames=[]
+          fish = fish * 2
+          durations = durations * 2
           for i,f in enumerate(fish):
               phase=2*math.pi*i/len(fish)
               frame=base.copy().convert('RGBA')
@@ -90,9 +160,11 @@ jobs:
               cut=f.crop(box)
               scale=170/cut.width
               cut=cut.resize((170,round(cut.height*scale)),Image.Resampling.NEAREST)
-              cut=cut.rotate(5*math.sin(phase),resample=Image.Resampling.NEAREST,expand=True)
-              x=round(400+65*math.sin(phase)-cut.width/2)
-              y=round(184+14*math.sin(phase*2)-cut.height/2)
+              cut=cyborg(cut,phase)
+              heading = -math.degrees(math.atan2(-60*math.sin(phase), 200*math.cos(phase)))
+              cut=cut.rotate(heading,resample=Image.Resampling.NEAREST,expand=True)
+              x=round(400+200*math.sin(phase)-cut.width/2)
+              y=round(184+60*math.cos(phase)-cut.height/2)
               shadow=Image.new('RGBA',cut.size,(0,0,0,0))
               shadow.putalpha(cut.getchannel('A').point(lambda p: int(p*.16)))
               frame.alpha_composite(shadow,(x+5,y+10))
